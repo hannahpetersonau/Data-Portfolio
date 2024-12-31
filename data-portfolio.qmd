@@ -1,0 +1,759 @@
+---
+title: "Portfolio Project 1"
+format: html
+editor: visual
+---
+
+\newpage
+
+```{=html}
+<!--
+Author: Hannah, Editor: Garrett
+Visualizations: Garrett
+Statistical Analysis: Hannah
+-->
+```
+## Introduction
+
+Our report consists of an exploration of data obtained through the Centers for Disease Control and Prevention (CDC), National Center for Chronic Disease Prevention and Health Promotion, in the Division of Nutrition, Physical Activity, and Obesity. This data initializes variables focused on analyzed adult participants diet, physical activity, weight and demographic obtained from a Behavioral Risk Factor Surveillance System (BRFSS) which was obtained between the years 2011 and 2023, inclusive.
+
+A brief scan over the description of the variables in the data set reveals 33 variables with more than 104 thousand observations are contained. The variable names are as follows: YearStart, YearEnd, LocationAbbr, LocationDesc, DataSource, Class, Topic, Question, Data_Value_Unit, Data_Valuem Data_Value_Alt, Data_Value_Footnote_symbol, Data_Value_Footnote, Low_Confidence_Limit, High_Confidence_Limit, Sample_Size, Total, Age (years), Education, Gender, Income, Race/Ethnicity, GeoLocation, ClassID, TopicID, QuestionID, DataValueTypeID, LocationID, StratificationCategory1, Stratification1, StratificationCategoryId1, and StratificationID1. Essentially, the data sets quantitative variables are Sample_Size, Low_Confidence_Limit, High_Confidence_Limit, Data_Value, Data_Value_Alt. The qualitative variables are the remaining. Following a review of the description for each of these variables, we noted a few variables contained the same values and/or were duplicate columns with a different name, which will be explored during the exploratory analysis.
+
+The data is organized in a manner where each observation (row) is a portion of a sample from a collective study. For example, the first seven rows of our data set when organized by "LocationAbbr" all come from the same study on the same date answering the same question. However, each row is a unique portion of that study, and for these observations, each row is a different race from the study. So, observation 1 has a "Sample_Size" of 477 American Indian/Alaska Native's who in 2011 were sampled for the "Question" *"Percent of adults aged 18 years and older who have obesity"* and found that 30.9% of them, fit the topic under "Question". The row with mentioned variables is displayed below for clarity:
+
+```{r, echo=FALSE, include=FALSE}
+library(tidyverse)
+library(ggrepel)
+library(plotly)
+library(dplyr)
+library(readr)
+library(ggalign)
+library(ggheatmap)
+library(pheatmap)
+library(viridis)
+```
+
+```{r, echo=FALSE, include=FALSE}
+# Hannah
+BRFSS <- read_csv("./Nutrition__Physical_Activity__and_Obesity_-_Behavioral_Risk_Factor_Surveillance_System_20241105.csv", show_col_types = FALSE)
+
+
+columns <- c("Sample_Size", "Question", "YearStart", "LocationDesc", "Data_Value", "StratificationCategory")
+for (col_name in columns) {
+  value <- BRFSS[[col_name]][1] 
+  cat(col_name, ":", value, "\n")
+}
+```
+
+There are 9 research questions placed under the "Question" variable for each observation. The questions this study collects data for are as follows:
+
+1.  Percent of adults aged 18 years and older who have obesity
+2.  Percent of adults who achieve at least 150 minutes a week of moderate-intensity aerobic physical activity or 75 minutes a week of vigorous-intensity aerobic physical activity and engage in muscle-strengthening activities on 2 or more days a week
+3.  Percent of adults aged 18 years and older who have an overweight classification
+4.  Percent of adults who engage in muscle-strengthening activities on 2 or more days a week
+5.  Percent of adults who achieve at least 300 minutes a week of moderate-intensity aerobic physical activity or 150 minutes a week of vigorous-intensity aerobic activity (or an equivalent combination)
+6.  Percent of adults who engage in no leisure-time physical activity
+7.  Percent of adults who achieve at least 150 minutes a week of moderate-intensity aerobic physical activity or 75 minutes a week of vigorous-intensity aerobic activity (or an equivalent combination)
+8.  Percent of adults who report consuming fruit less than one time daily
+9.  Percent of adults who report consuming vegetables less than one time daily
+
+This indicates our data has a focus on health, adding clear categories of exploration such as vegetable and fruit consumption, physical activity duration/intensity, and obesity status.
+
+## Literature Review
+
+As the data does not pair itself with a review of the current literature on these explored topics, we are providing two relevant articles on the literature of these health topics.
+
+**Literature One:**
+
+Okobi, Okelue E, et al. “Trends in Obesity-Related Mortality and Racial Disparities.” *PubMed Central*, U.S. National Library of Medicine, 6 July 2023, pmc.ncbi.nlm.nih.gov/articles/PMC10403782/.
+
+This article focuses on the trends in obesity-related mortality rates based on how they effect differing races. The focus of this study is on African American communities, specifically on how the disparity of metabolic and cardiovascular disorders are apparent regarding limited access to nutritious food, exercise, health insurance, and medical care. The data in this study compares and analyzes obesity-related mortality rates between African Americans, White persons, and other races. The study does include whether the obesity in an individual was influenced by drug-intake and alveolar hypoventilation.
+
+**Literature Two:**
+
+Racial-Ethnic Disparities in Obesity and Biological, Behavioral, and Sociocultural Influences in the United States: A Systematic Review (Min et al., 2021).
+
+This systematic review of 47 studies highlights persistent racial/ethnic disparities in obesity in the U.S. from 2007 to 2020. The review emphasizes the role of biological, behavioral, and sociocultural factors, such as body fat distribution, weight perceptions, health behaviors, and socioeconomic influences, in shaping these disparities and calls for tailored public health interventions.
+
+Both articles provide data and analysis on the relevancy of obesity in the U.S. and its relationship between many factors, inclusive of race, ethnicity, age, and behavioral influences. Our chosen data set focuses on surveying populations on these mentioned factors.
+
+## Initial Hypothesis
+
+According the National Institute of Health, \~42.4% of adults in the United States are currently classified as obese (NIH 2023). Commonly, nutrition and health experts point to a decrease in exercise and plant-consumption as the cause for the high obesity rates among Americans. The "SAD" (Standard American Diet) is known for its poor nutrient diversity, with 90% of American's not eating enough vegetables and 80% not eating enough fruit (USDA 2024). Alongside the poor vegetable and fruit consumption is the overall decrease in physical activity in the United States. Several studies have shown a correlation with proper amounts of physical activity and a decline in obesity rates, suggesting higher rates of physical activity would mean lower rates of obesity in America. There are also suggestions in current literature, similar to the literature above, that suggest low income households and persons with less than a high school diploma also correlate with higher obesity rates. As far as race and its correlation with obesity, black adults have the highest prevalence of obesity compared to all ethnicities, at 38.4% of those reporting being obese (CDC 2019).
+
+In regards to the current literature and our data set, the general assumptions made about low-income households and less than a high school education suggests that the data would provide correlations between these and higher obesity rates. Our team has selected to explore this hypothesis, expecting to find a correlation with the given variables and observations. Specifically, we expect to see that populations who reported low-income or had not graduated high school will also have higher rates of those who reported being obese. We want to explore the way race effects obesity rates as well, with our hypothesis following the current literature, claiming that non-Hispanic black individuals will report the highest obesity rates.
+
+This will be measured through visualizations and statistical analysis. Specifically, we are looking for observations that report higher healthy behavior Data_Value percentages, will report lower obesity rates.
+
+## Exploratory Data Analysis
+
+The data is organized with several categorical variables that are relevant to the organization of the data set. This includes the states where data was collected, ages of participants, education levels, and income levels. To analyze these categories, we used distinct() to have each possible value made visible so we can fully understand the contents of each variable. We will display these categories via a "Stratifications" .
+
+# Stratifications
+
+| ID    | Stratification Category | Stratification's                                                                                                                                                 |
+|-------------------|-------------------|----------------------------------|
+| RACE  | Race/Ethnicity          | "2 or more races", "Non-Hispanic White", "American Indian/Alaska Native", "Hispanic", "Asian", "Hawaiian/Pacific Islander", "Non-Hispanic Black"                 |
+|       |                         |                                                                                                                                                                  |
+| GEN   | Gender                  | NA, "Male", "Female"                                                                                                                                             |
+|       |                         |                                                                                                                                                                  |
+| AGEYR | Age (years)             | NA, "35 - 44", "25 - 34", "18 - 24", "55 - 64", "65 or older"                                                                                                    |
+|       |                         |                                                                                                                                                                  |
+| INC   | Income                  | NA, "Data not reported", "Less than \$15,000", "\$15,000 - \$24,999", "\$25,000 - \$34,999", "\$35,000 - \$49,999", "\$50,000 - \$74,999", "\$75,000 or greater" |
+|       |                         |                                                                                                                                                                  |
+| EDU   | Education               | NA, "Less than high school", "Some college or technical school", "High school graduate", "College graduate"                                                      |
+
+\newpage
+
+By doing this, we found a few interesting additions to our data. For states, I noticed that there were 55 distinct values. That is more than the 50 states we have, so we read through them to see if there were any additional states. On top of the 50 states, there are also Guam, District of Columbia, "National", Puerto Rico, and Virgin Islands. National likely refers to it being a nation-wide population and is not specific to one area of the nation.
+
+```{r, include=FALSE, echo=FALSE}
+# Garrett APPENDIX 1
+# cleaning data
+data <- BRFSS
+
+# Step 1: Filter out rows where StratificationCategory is "Total" to avoid redundancy
+data_tidy <- data %>%
+  filter(StratificationCategory1 != "Total")
+
+# Step 2: Pivot longer so each row represents a unique combination of Year, Location, QuestionID, and Stratification
+data_tidy <- data_tidy %>%
+  pivot_longer(
+    cols = c(Data_Value, Low_Confidence_Limit, High_Confidence_Limit, Sample_Size),
+    names_to = "Metric",
+    values_to = "Value"
+  )
+# Step 3: Create a unique identifier for each observation and spread out "Metric" to columns
+data_tidy <- data_tidy %>%
+  unite("UniqueID", c(YearStart, LocationAbbr, LocationDesc, QuestionID, StratificationCategory1, Stratification1), remove = FALSE) %>%
+  pivot_wider(
+    names_from = Metric,
+    values_from = Value
+  )
+
+# Step 4: Remove the "UniqueID" column if it's no longer needed
+drops <- c("Seed","UniqueID", "Data_Value_Footnote", "Total")
+data_tidy <- data_tidy[ , !(names(data_tidy) %in% drops)]
+
+# Step 5: Clean up and reorder columns as desired
+data_tidy <- data_tidy %>%
+  arrange(YearStart, LocationAbbr, LocationDesc, QuestionID, StratificationCategory1, Stratification1)
+
+BRFSS_tidy <- data_tidy
+```
+
+```{r, warning=FALSE, include=FALSE}
+# Garrett APPENDIX 2
+
+df_summary <- BRFSS_tidy %>% filter(QuestionID=="Q036") |> 
+  group_by(YearStart) %>%
+  summarize(
+    Black = mean(Data_Value[Stratification1 == "Non-Hispanic Black"], na.rm = TRUE),
+    White = mean(Data_Value[Stratification1 == "Non-Hispanic White"], na.rm = TRUE),
+    Hispanic = mean(Data_Value[Stratification1 == "Hispanic"], na.rm = TRUE),
+    Native = mean(Data_Value[Stratification1 == "American Indian/Alaska Native"], na.rm = TRUE),
+    Two_or_more = mean(Data_Value[Stratification1 == "2 or more races"], na.rm = TRUE)
+  )
+
+df_summary7 <- BRFSS_tidy |> filter(QuestionID=="Q036") |> 
+  group_by(YearStart) |> 
+  summarize(
+    `Less_than_$15k` = mean(Data_Value[Stratification1 == "Less than $15,000"], na.rm = TRUE),
+    `$15,000 to $24,999` = mean(Data_Value[Stratification1 == "$15,000 - $24,999"], na.rm = TRUE),
+    `$25,000 - $34,999` = mean(Data_Value[Stratification1 == "$25,000 - $34,999"], na.rm = TRUE),
+    `$35,000 - $49,999` = mean(Data_Value[Stratification1 == "$35,000 - $49,999"], na.rm = TRUE),
+    `$50,000 - $74,999` = mean(Data_Value[Stratification1 == "$50,000 - $74,999"], na.rm = TRUE),
+    `$75,000 or more` = mean(Data_Value[Stratification1 == "$75,000 or greater"], na.rm = TRUE)
+  )
+
+df_all <- left_join(df_summary, df_summary7)
+
+df_all_long <- df_all |> pivot_longer(
+  cols=Black:Two_or_more, 
+  names_to="Race",
+  values_to="value_race")
+
+df_all_long2 <- df_all_long |> pivot_longer(
+  cols=`Less_than_$15k`:`$75,000 or more`,
+  names_to="income",
+  values_to="value_income")
+
+df_all_long2$income <- factor(df_all_long2$income, 
+                              levels = c("Less_than_$15k", "$15,000 to $24,999", 
+                                         "$25,000 - $34,999", "$35,000 - $49,999",
+                                         "$50,000 - $74,999", "$75,000 or more"))
+
+
+df_all_actually <- df_all_long2 |> group_by(YearStart, Race, income) |> 
+  summarize(avg_value_race = mean(value_race),
+            avg_value_income = mean(value_income))
+```
+
+```{r, warning=FALSE, include=FALSE}
+# Garrett APPENDIX 3
+df_edu_loc <- BRFSS_tidy %>% filter(QuestionID=="Q036") |> 
+  group_by(YearStart, LocationDesc) %>%
+  summarize(
+    less_than_high_school = mean(Data_Value[Stratification1 == "Less than high school"], na.rm = TRUE),
+    high_school_grad = mean(Data_Value[Stratification1 == "High school graduate"], na.rm = TRUE),
+    some_college_tech_school = mean(Data_Value[Stratification1 == "Some college or technical school"], na.rm = TRUE),
+    college_grad = mean(Data_Value[Stratification1 == "College graduate"], na.rm = TRUE),
+  )
+
+df_edu_loc_long <- df_edu_loc |> 
+  pivot_longer(
+  cols=less_than_high_school:college_grad, 
+  names_to="Education",
+  values_to="value_edu")
+
+
+
+df_edu_loc_long$YearStart <- factor(df_edu_loc_long$YearStart, levels=2011:2023)
+
+df_edu_loc_long$Education <- factor(df_edu_loc_long$Education, 
+                                levels=c("less_than_high_school", "high_school_grad",
+                                         "some_college_tech_school", "college_grad"))
+```
+
+As our focus is on the factors low-income, race, and education in regards to obesity rates, we will perform summaries of these to see if there are any patterns.
+
+```{r, echo=FALSE, warning=FALSE}
+# Garrett
+
+ggplot(df_all_actually, aes(x= income, y=avg_value_income)) + 
+  geom_boxplot(aes(color=income)) + 
+  theme(axis.text.x = element_text(angle = -60)) + 
+  labs(title="Obesity Rates by Income",
+       caption="Source: BRFSS",
+       y="Percent of Adults with Obesity")
+
+ggplot(df_all_actually, aes(x=Race, y=avg_value_race)) + 
+  geom_boxplot(aes(color=Race)) + 
+  theme(axis.text.x = element_text(angle = -60)) + 
+  labs(title="Obesity Rates by Race",
+       caption="Source: BRFSS",
+       y="Percent of Adults with Obesity")
+
+ggplot(df_edu_loc_long, aes(x=Education, y=value_edu)) + 
+  geom_boxplot(aes(color=Education)) + 
+  theme(axis.text.x = element_text(angle = -40)) + 
+  labs(title="Obesity Prevalence by Level of Education", 
+       y="Percent of Adults with Obesity",
+       caption="Source: BRFSS")
+```
+
+Reviewing our box plots, we can see that when it comes to income, obesity rates tend to skew higher as we decrease income. What this means is that the graph is showing that obesity rate percents are higher on average when income levels are lower. As far as race, there seems to be a higher skew for Black and Native persons reporting higher obesity rates. For education, we are seeing a significant drop in obesity rates for those who are college graduates, and higher rates of obesity for those with less than a high school diploma. Interestingly, there are a lot of visible outliers for the "less than a high school diploma" group. This can be indicative of food insecurity, causing more outliers reporting on the low range of obesity rates as there may be more people not impacted by obesity for the reason of less access to food due to their low income (as a lower education is typically tied to lower income) but this cannot be concluded without further testing. Overall, similar to our hypothesis, all box plots are following a pattern we expected to see.
+
+As income, education and race are categorical variables, we cannot use the traditional cor() function to see its correlation. We can, however, manipulate the data to see a correlative difference for high income (\$75k or more) and low income (less than \$15k). As for education, we can find a correlative difference in the lowest education group (less than high school diploma), and our highest (college graduate). For Race, based on the box plots it seems White persons reported the lowest amount of obesity among other groups, however pinning the obesity rates for White compared to Black would not suffice as there is no "center" level for race as there is income, so we will not be including these in a scatter plot. However, the income and education scatter plots are below.
+
+```{r, echo=FALSE, warning=FALSE}
+# Hannah for plot 1, Garrett for plot 2
+
+# plot 1
+obesity_only <- BRFSS |>
+  filter(
+    Question == "Percent of adults aged 18 years and older who have obesity"
+  )
+
+incomes_highlow75 <- obesity_only |>
+  filter(Income == "$75,000 or greater")
+incomes_highlow15 <- obesity_only |>
+  filter(Income == "Less than $15,000")
+
+combine_income <- data.frame(
+  Data_Value = c(incomes_highlow15$Data_Value, incomes_highlow75$Data_Value),
+  Income = c(rep("Income < $15,000", 
+                 length(incomes_highlow15$Data_Value)),
+             rep("Income ≥ $75,000", 
+                 length(incomes_highlow75$Data_Value))),
+  Group = rep(c("Low Income", "High Income"), 
+              times = c(length(incomes_highlow15$Data_Value), 
+                        length(incomes_highlow75$Data_Value))))
+ggplot(combine_income, aes(x = Data_Value, 
+                           y = Data_Value, color = Income)) +
+  geom_point(alpha = 0.5) + labs(
+    title = "Correlation Between Obesity Rates for Low and High Income Groups", x = "Obesity Rates", y = "Obesity Rates") +
+  scale_color_manual(values = c("Income < $15,000" = "darkred", 
+                                "Income ≥ $75,000" = "lightpink")) + 
+  theme_classic()
+
+# plot 2
+ggplot(df_edu_loc_long, aes(x=YearStart, y=value_edu, group=Education)) + 
+  geom_jitter(aes(fill=Education), shape=21, alpha=0.3, color="black") + 
+  geom_smooth(method='lm',se=F, aes(color=Education), fill="black", size=2) +
+  labs(title="Obesity Prevalence by Level of Education",
+       y="Percent of Adults with Obesity",
+       x="Year",
+       caption="Source: BRFSS")
+
+```
+
+This graph displays the pattern we observed previous, that obesity rates are seeming to be higher among those with a lower income. For education, overtime we are seeing an increase in obesity rates among all groups, which is relevant as evidence in the current literature points to an increase in education generally, which brings about a question of why there seems to be a correlation with lower education and obesity, then how come there is still an increase in obesity, generally? This is something that would be important to explore with a data set containing more information on the education-type and more detailed lifestyles of these individuals.
+
+As a large focus of our study is the implication of our low-income variable on obesity, and as the percent of adults in the United States who report obesity is mapped out, we can search for a pattern between lower-income states and higher obesity rates to see if there is any pattern.
+
+```{r, warning=FALSE, echo=FALSE}
+# Garrett
+data_filtered <- data_tidy %>%
+  filter(QuestionID == "Q036", StratificationCategory1 == "Race/Ethnicity")
+
+data_avg <- data_filtered %>%
+  group_by(YearStart, LocationAbbr, LocationDesc, Stratification1) %>%
+  summarize(avg_Data_Value = mean(Data_Value, na.rm = TRUE), .groups = "drop")
+
+data_avg_plotly <- mutate(data_avg, hover = paste0(LocationDesc,"\n",
+                                                   avg_Data_Value, "%"))
+
+color_scale <- magma(n = 9, alpha = 1, begin = 0, end = 1, direction = -1)
+
+q36_graph = plot_geo(data_avg_plotly,
+                     locationmode = 'USA-states',
+                     frame = ~YearStart) |> 
+  add_trace(locations = ~LocationAbbr,
+            z = ~avg_Data_Value,
+            zmin = 0,
+            zmax = 75,
+            color = ~avg_Data_Value,
+            colors = color_scale,
+            text = ~hover,
+            hoverinfo = 'text') |> 
+  layout(geo = list(scope = 'usa'),
+         title = "Percent of Adults with Obesity in the United States \n 2011-2023") |> 
+  config(displayModeBar = FALSE, scrollZoom= FALSE) |> 
+  colorbar(title = "Obesity\nPrevalence (%)", ticksuffix = "%")
+
+q36_graph
+```
+
+Overtime, it seems states known to have a lower mean income have higher reports of obesity among their populations. This seems moderately consistent overtime, with the last decade seeming to have the highest rates nationally. This could be due to outside factors such as an increase in processed-food consumption or possibly a drop in disposable income, both of which cannot be explored in this data set, but are factors to consider when finalizing hypothesis.
+
+We also chose to visualize race across each region and their obesity prevalence to visualize a possible pattern with race and income simultaneously effecting obesity rates.
+
+```{r, echo=FALSE, warning=FALSE}
+# Garrett
+# plotly map diff races
+
+data_filtered <- data_tidy %>%
+  filter(QuestionID == "Q036", StratificationCategory1 == "Race/Ethnicity")
+
+# Step 2: Calculate the average Data_Value by Year, Location, and Stratification (Race/Ethnicity)
+data_avg2 <- data_filtered %>%
+  group_by(LocationAbbr, LocationDesc, Stratification1) %>%
+  summarize(avg_Data_Value = mean(Data_Value, na.rm = TRUE), .groups = "drop")
+
+
+
+data_avg2 <- mutate(data_avg, hover = paste0(LocationDesc,"\n", avg_Data_Value, "%"))
+
+
+q36_graph2 = plot_geo(data_avg2,
+                     locationmode = 'USA-states',
+                     frame = ~Stratification1) |> 
+  add_trace(locations = ~LocationAbbr,
+            z = ~avg_Data_Value,
+            zmin = 0,
+            zmax = 75,
+            color = ~avg_Data_Value,
+            colors = color_scale,
+            reversescale = TRUE,
+            text = ~hover,
+            hoverinfo = 'text') |> 
+  layout(geo = list(scope = 'usa'),
+         title = "Percent of Adults with Obesity in the United States \n 2011-2023") |> 
+  config(displayModeBar = FALSE, scrollZoom= FALSE) |> 
+  colorbar(title = "Obesity\nPrevalence (%)", ticksuffix = "%")
+
+q36_graph2
+```
+
+Similar to both the income-map plot and the box plot for race and obesity, we are seeing that states with lower incomes on average also have higher rates of obesity reported from Non-Hispanic Black persons. This further supports the pattern that low income and Black individuals are dis-proportionally reporting higher rates of obesity.
+
+## Statistical Methods and Results
+
+For our final exploration, we will perform a formal hypothesis test for our race, income, and education categories. We will check assumptions for an ANOVA test for each category compared against obesity rates. If assumptions are not met, we will use a non-parametric test such as a Kruskal-Wallis Test.
+
+We will do each statistical analysis for each variable, separately.
+
+### Outliers
+
+Our outliers will be tested among all three variables, collectively, and we will measure these with IQR testing but with a larger threshold as our data is a large set with a large number of groups, which will cause more outliers by default. For leniency, we will use a threshold of 2.5. The outlier test here stands for all other variables we will statistically test as it is looking at the outliers for the entire data set in focus for those who reported having obesity.
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+obesity_only_na <- obesity_only |> filter(!is.na(Data_Value))
+Q1 <- quantile(obesity_only_na$Data_Value, 0.25, na.rm = TRUE) # 27
+Q3 <- quantile(obesity_only_na$Data_Value, 0.75, na.rm = TRUE) # 35.8
+
+IQR <- Q3 - Q1
+
+# adjusted threshold as original IQR is too strict on our data set
+lower_threshold <- 27 - 2.5 * IQR
+upper_threshold <- 35.8 + 2.5 * IQR
+
+outliers <- obesity_only_na$Data_Value[obesity_only_na$Data_Value < lower_threshold | obesity_only_na$Data_Value > upper_threshold]
+
+cat("There are ", length(outliers), " outliers")
+```
+
+44 outliers are minimal compared to the total observations in this data set and therefore do not have a large effect on our test. We will now perform the assumption tests to assure all assumptions are met for each variables data.
+
+### Race & Obesity
+
+With ANOVA, we first must check normality.
+
+```{r, echo=FALSE, warning=FALSE}
+# Hannah
+
+ggplot(obesity_only, aes(x = Data_Value)) +
+  geom_histogram(aes(y = ..density..), bins = 30, alpha = 0.6) +
+  geom_density(alpha = 0.2, color = "darkred", fill = "lightpink") +
+  facet_wrap(~`Race/Ethnicity`) +
+  labs(title = "Histogram and Density Curve for Obesity Rates by Race",
+       x="Percent of Adults with Obesity",
+       caption="Source: BRFSS") + 
+  theme_classic()
+
+```
+
+As you can see, while these are mostly normal, Asian is not fitting with normality, and for that reason we must move on with the Kruskal-Wallis Test. The study meets independence, sample size and randomization measures. We have displayed a box plot previous to visualize its distributions. The distributions are not drastically different, so we may continue.
+
+Null Hypothesis: There are no significant differences in obesity rates among the racial groups -\> ($H_a$ -$H_0$= 0)
+
+Alternative Hypothesis: There is a significant difference in obesity rates among the racial groups -\> ($H_a$ -$H_0$≠ 0)
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+kruskal.test(Data_Value ~`Race/Ethnicity`, data = obesity_only)
+```
+
+The test results show that there is a significantly large difference between groups, indicating with a low p-value that our data has a significant difference in values per race. We accept the alternative hypothesis, there is a significant difference in obesity rates among the racial groups,$H_a$-$H_0$≠ 0.
+
+\newpage
+
+### Income & Obesity
+
+We will check for normality to see if we can conduct an ANOVA test.
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+ggplot(obesity_only, aes(x = Data_Value)) +
+  geom_histogram(aes(y = ..density..), bins = 30, alpha = 0.6) +
+  geom_density(alpha = 0.2, color = "darkred", fill = "lightpink") +
+  facet_wrap(~`Income`) +
+  labs(title = "Histogram and Density Curve for Obesity Rates by Income",
+       x="Percent of Adults with Obesity",
+       caption="Source: BRFSS") + 
+  theme_classic()
+
+```
+
+Every group for income is normally distributed, meaning we may continue with the ANOVA test. Independence and randomization assumptions are met, but we need to test for homogeneity. We will use the Bartlett Test. We would need a high p-value (higher than 0.05) to pass the test.
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+bartlett.test(Data_Value ~ Income, data = obesity_only)
+```
+
+The p-value is much smaller then 0.05, indicating that our data is not homogeneous. We will again use the Kruskal-Wallis Test.
+
+Null Hypothesis: There are no significant differences in obesity rates among different income level groups -\> ($H_a$ -$H_0$= 0)
+
+Alternative Hypothesis: There is a significant difference in obesity rates among different income level groups -\> ($H_a$ -$H_0$≠ 0)
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+kruskal.test(Data_Value ~`Income`, data = obesity_only)
+```
+
+The test results show that there is a significantly large difference between groups, indicating with a low p-value that our data has a significant difference in values per race. We accept the alternative hypothesis, there is a significant difference in obesity rates among the racial groups,$H_a$-$H_0$≠ 0.
+
+\newpage
+
+### Education & Obesity
+
+We will check for normality to see if we can conduct an ANOVA test.
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+ggplot(obesity_only, aes(x = Data_Value)) +
+  geom_histogram(aes(y = ..density..), bins = 30, alpha = 0.6) +
+  geom_density(alpha = 0.2, color = "darkred", fill = "lightpink") +
+  facet_wrap(~`Education`) +
+  labs(title = "Histogram and Density Curve for Obesity Rates by Education",
+       x="Percent of Adults with Obesity",
+       caption="Source: BRFSS") + 
+  theme_classic()
+```
+
+Every group for income is normally distributed, meaning we may continue with the ANOVA test. Independence and randomization assumptions are met, but we need to test for homogeneity. We will use the Bartlett Test. We would need a high p-value (higher than 0.05) to pass the test.
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+bartlett.test(Data_Value ~ Education, data = obesity_only)
+```
+
+The p-value is much smaller then 0.05, indicating that our data is not homogeneous. We will again use the Kruskal-Wallis Test.
+
+Null Hypothesis: There are no significant differences in obesity rates among different education level groups -\> ($H_a$ -$H_0$= 0)
+
+Alternative Hypothesis: There is a significant difference in obesity rates among different education level groups -\> ($H_a$ -$H_0$≠ 0)
+
+```{r, warning=FALSE, echo=FALSE}
+# Hannah
+kruskal.test(Data_Value ~`Education`, data = obesity_only)
+```
+
+The test results show that there is a significantly large difference between groups, indicating with a low p-value that our data has a significant difference in values per race. We accept the alternative hypothesis, there is a significant difference in obesity rates among the racial groups,$H_a$-$H_0$≠ 0.
+
+## Data-Driven Hypothesis
+
+Prior to exploring the data, we initially formed our hypothesis around the current literature. The current literature discusses a correlation between high reports of obesity in association with lower income, less education, and identifying as Black. We then explored our data set with the expectation to find these correlations.
+
+During our exploratory data analysis, we discovered a few surprising patterns in the data. It is not well-known about the health outcomes of indigenous people in the United States as their polling is low and their population is considerably small relative to the other racial groups in America. While computing the box plots on obesity rates relative to racial groups, it was shown that Native American's had some of the highest prevalence of obesity in our data, which suprised us as it is not something that is commonly discussed. After some digging, it is clear that Native American's have a high prevalence of diabetes within their communities, and so there is an expectation to see a rise in obesity as well.
+
+When it came to other variables, we noted that while lower income levels showed more obesity prevalence, it was shocking to find how prevalent obesity was regardless of income level. I believe we typically assume that if the correlation assumes lower-income has higher obesity rates, then we would assume a very small rate of obesity among high-income individuals. However, even though its rates were much smaller compared to low-income individuals, obesity prevalence was still far into the 28-30% range, which is a large portion of the group. The takeaway from this pattern is that obesity should not be concluded to be an outcome of being lower income, but rather that there is potentially another factor effecting obesity rates outside of income itself.
+
+As we conclude our analysis on the data, we continue to stand with our initial hypothesis with the addition of Indigenous and Pacific-Islanders to the racial groups that are dis-proportionally effected by obesity. Our data-driven hypothesis is "Obesity is not equally prevalent across all races/ethnicity’s, incomes, and education levels and is more common among Non-Hispanic Black, Native American, and Pacific-Islander Individuals, low-income households, and those who hold less than a high school diploma."
+
+## Discussion
+
+A quick search within any scholarly journal, we will find a number of studies and analysis on the topic of obesity being published routinely. Obesity is and continues to be a growing concern in the world and because of this, there are a growing number of studies and replications being added to the conversation daily. Our results will add to the current conversation, continuing the continuously explored correlation between high obesity rates in relation to lower education, lower income levels, and groups who identify as Black. Having also found a high correlation of obesity rates in both Native American and Pacific Islander communities, we will hope to add to this conversation as well, hopefully encouraging more research in this area.
+
+## References
+
+NIH Research Team. "Overweight & Obesity Statistics." *National Institute of Diabetes and Digestive and Kidney Diseases,* NIH, September 2021, https://www.niddk.nih.gov/health-information/health-statistics/overweight-obesity#:\~:text=Nearly%201%20in%203%20adults%20(30.7%25)%20are%20overweight.&text=More%20than%202%20in%205%20adults%20(42.4%25)%20have%20obesity.&text=About%201%20in%2011%20adults%20(9.2%25)%20have%20severe%20obesity.
+
+Okobi, Okelue E, et al. “Trends in Obesity-Related Mortality and Racial Disparities.” *PubMed Central*, U.S. National Library of Medicine, 6 July 2023, pmc.ncbi.nlm.nih.gov/articles/PMC10403782/.
+
+Peterson, Ruth MD; Liping Pan, et al. "Racial and Ethnic Disparities in Adult Obesity in the United States CDC's Tracking to Inform State Local Action." *Preventing Chronic Disease*, CDC, 11 April 2019, https://www.cdc.gov/pcd/issues/2019/18_0579.htm
+
+Racial-Ethnic Disparities in Obesity and Biological, Behavioral, and Sociocultural Influences in the United States: A Systematic Review (Min et al., 2021).
+
+Stewart, Hayden; Hyman, Jeffrey, et al. "Satisfying Fruit and Vegetable Recommendations Possible Under \$3 a Day, Data Analysis Shows." *Economic Research Service,* USDA, 9 September 2024, https://www.ers.usda.gov/amber-waves/2024/september/satisfying-fruit-and-vegetable-recommendations-possible-for-under-3-a-day-data-analysis-shows/#:\~:text=According%20to%20the%20Dietary%20Guidelines,do%20not%20eat%20enough%20fruit.
+
+## Appendix
+
+Appendix 1: Code chunk used to clean the data to be utilized throughout exploration in a format that is tidy and arranged accordingly.
+
+```{r}
+# cleaning data
+data <- BRFSS
+
+# Step 1: Filter out rows where StratificationCategory is "Total" to avoid redundancy
+data_tidy <- data %>%
+  filter(StratificationCategory1 != "Total")
+
+# Step 2: Pivot longer so each row represents a unique combination of Year, Location, QuestionID, and Stratification
+data_tidy <- data_tidy %>%
+  pivot_longer(
+    cols = c(Data_Value, Low_Confidence_Limit, High_Confidence_Limit, Sample_Size),
+    names_to = "Metric",
+    values_to = "Value"
+  )
+# Step 3: Create a unique identifier for each observation and spread out "Metric" to columns
+data_tidy <- data_tidy %>%
+  unite("UniqueID", c(YearStart, LocationAbbr, LocationDesc, QuestionID, StratificationCategory1, Stratification1), remove = FALSE) %>%
+  pivot_wider(
+    names_from = Metric,
+    values_from = Value
+  )
+
+# Step 4: Remove the "UniqueID" column if it's no longer needed
+drops <- c("Seed","UniqueID", "Data_Value_Footnote", "Total")
+data_tidy <- data_tidy[ , !(names(data_tidy) %in% drops)]
+
+# Step 5: Clean up and reorder columns as desired
+data_tidy <- data_tidy %>%
+  arrange(YearStart, LocationAbbr, LocationDesc, QuestionID, StratificationCategory1, Stratification1)
+
+BRFSS_tidy <- data_tidy
+```
+
+Appendix 2: Code chunk used to arrange, find the mean, and organize race and income obesity values by their groups. Used for cleaner plot creations following its organization and data frame creation.
+
+```{r}
+df_summary <- BRFSS_tidy %>% filter(QuestionID=="Q036") |> 
+  group_by(YearStart) %>%
+  summarize(
+    Black = mean(Data_Value[Stratification1 == "Non-Hispanic Black"], na.rm = TRUE),
+    White = mean(Data_Value[Stratification1 == "Non-Hispanic White"], na.rm = TRUE),
+    Hispanic = mean(Data_Value[Stratification1 == "Hispanic"], na.rm = TRUE),
+    Native = mean(Data_Value[Stratification1 == "American Indian/Alaska Native"], na.rm = TRUE),
+    Two_or_more = mean(Data_Value[Stratification1 == "2 or more races"], na.rm = TRUE)
+  )
+
+df_all_long2 <- df_all_long |> pivot_longer(
+  cols=`Less_than_$15k`:`$75,000 or more`,
+  names_to="income",
+  values_to="value_income")
+
+df_all_long2$income <- factor(df_all_long2$income, levels = c("Less_than_$15k", "$15,000 to $24,999",
+                                                              "$25,000 - $34,999", "$35,000 - $49,999",
+                                                              "$50,000 - $74,999", "$75,000 or more"))
+
+
+df_all_actually <- df_all_long2 |> group_by(YearStart, Race, income) |> 
+  summarize(avg_value_race = mean(value_race),
+            avg_value_income = mean(value_income))
+```
+
+Appendix 3: Code chunk used to arrange, find the mean, and organize education obesity values by their groups. Used for cleaner plot creations following its organization and data frame creation.
+
+```{r}
+df_edu_loc <- BRFSS_tidy %>% filter(QuestionID=="Q036") |> 
+  group_by(YearStart, LocationDesc) %>%
+  summarize(
+    less_than_high_school = mean(Data_Value[Stratification1 == "Less than high school"], na.rm = TRUE),
+    high_school_grad = mean(Data_Value[Stratification1 == "High school graduate"], na.rm = TRUE),
+    some_college_tech_school = mean(Data_Value[Stratification1 == "Some college or technical school"], na.rm = TRUE),
+    college_grad = mean(Data_Value[Stratification1 == "College graduate"], na.rm = TRUE),
+  )
+
+df_edu_loc_long <- df_edu_loc |> 
+  pivot_longer(
+  cols=less_than_high_school:college_grad, 
+  names_to="Education",
+  values_to="value_edu")
+
+df_edu_loc_long$YearStart <- factor(df_edu_loc_long$YearStart, levels=2011:2023)
+
+df_edu_loc_long$Education <- factor(df_edu_loc_long$Education, 
+                                levels=c("less_than_high_school", "high_school_grad",
+                                         "some_college_tech_school", "college_grad"))
+```
+
+Additional Appendix: While exploring our data, we analyzed other variables and factors within the data set we feel did not have significant enough of an impact on our hypothesis development, as why these were not shared in the main report, but are still interesting finds to look into exploring further had we been given access to more data and more time.
+
+### Gender & Obesity, Age & Obesity
+
+```{r, warning=FALSE, echo=FALSE}
+# Garrett
+df_gender_loc <- BRFSS_tidy %>% filter(QuestionID=="Q036") |> 
+  group_by(YearStart, LocationDesc) %>%
+  summarize(
+    male = mean(Data_Value[Stratification1 == "Male"], na.rm = TRUE),
+    female = mean(Data_Value[Stratification1 == "Female"], na.rm = TRUE)
+  )
+
+df_gender_loc_long <- df_gender_loc |> 
+  pivot_longer(
+  cols=male:female, 
+  names_to="Gender",
+  values_to="value_gender")
+
+df_gender_loc_long$YearStart <- factor(df_gender_loc_long$YearStart, levels=2011:2023)
+
+df_gender_loc_long$Gender <- factor(df_gender_loc_long$Gender, 
+                                levels=c("male", "female"))
+```
+
+```{r, warning=FALSE, echo=FALSE}
+# Garrett
+df_age_loc <- BRFSS_tidy %>% filter(QuestionID=="Q036") |> 
+  group_by(YearStart, LocationDesc) %>%
+  summarize(
+   `18 - 24` = mean(Data_Value[Stratification1 == "18 - 24"], na.rm = TRUE),
+    `25 - 34` = mean(Data_Value[Stratification1 == "25 - 34"], na.rm = TRUE),
+    `35 - 44` = mean(Data_Value[Stratification1 == "35 - 44"], na.rm = TRUE),
+    `45 - 54` = mean(Data_Value[Stratification1 == "45 - 54"], na.rm = TRUE),
+    `55 - 64` = mean(Data_Value[Stratification1 == "55 - 64"], na.rm = TRUE),
+    `65 or older` = mean(Data_Value[Stratification1 == "65 or older"], na.rm = TRUE)
+  )
+
+df_age_loc_long <- df_age_loc |> 
+  pivot_longer(
+  cols=`18 - 24`:`65 or older`, 
+  names_to="Age",
+  values_to="value_age")
+
+df_age_loc_long$YearStart <- factor(df_age_loc_long$YearStart, levels=2011:2023)
+
+df_age_loc_long$Age <- factor(df_age_loc_long$Age, 
+                                levels=c("18 - 24", "25 - 34", "35 - 44", 
+                                         "45 - 54", "55 - 64", "65 or older"))
+```
+
+```{r, warning=FALSE, echo=FALSE}
+# Garrett
+ggplot(df_gender_loc_long, aes(x=Gender, y=value_gender)) + 
+  geom_boxplot(aes(color=Gender)) + 
+  labs(title="Obesity Prevalence by Gender", 
+       y="Percent of Adults with Obesity",
+       caption="Source: BRFSS")
+
+ggplot(df_age_loc_long, aes(x=Age, y=value_age)) + 
+  geom_boxplot(aes(color=Age)) + 
+  labs(title="Obesity Prevalence by Age Group", 
+       y="Percent of Adults with Obesity",
+       caption="Source: BRFSS")
+```
+
+Regional differences considering Age & obesity rates:
+
+```{r, warning=FALSE, echo=FALSE}
+# Garrett
+new_england <- c("Maine", "New Hampshire", "Vermont", "Massachusetts", "Rhode Island", "Connecticut")
+mideast <- c("New York", "New Jersey", "Pennsylvania", "Delaware", "Maryland", "District of Columbia")
+southeast <- c("Virginia", "West Virginia", "North Carolina", "South Carolina", "Georgia", "Florida", 
+               "Kentucky", "Tennessee", "Alabama", "Mississippi", "Arkansas", "Louisiana")
+great_lakes <- c("Ohio", "Indiana", "Illinois", "Michigan", "Wisconsin")
+plains <- c("Minnesota", "Iowa", "Missouri", "North Dakota", "South Dakota", "Nebraska", "Kansas")
+southwest <- c("Texas", "Oklahoma", "New Mexico", "Arizona")
+rocky_mountains <- c("Montana", "Idaho", "Wyoming", "Colorado", "Utah", "Nevada")
+far_west <- c("Washington", "Oregon", "California", "Alaska", "Hawaii")
+territories <- c("Puerto Rico", "Guam", "American Samoa", "Virgin Islands", "Northern Mariana Islands")
+
+df_age_loc_long$region <- ifelse(df_age_loc_long$LocationDesc %in% new_england, "New England",
+             ifelse(df_age_loc_long$LocationDesc %in% mideast, "Mideast",
+             ifelse(df_age_loc_long$LocationDesc %in% southeast, "Southeast",
+             ifelse(df_age_loc_long$LocationDesc %in% great_lakes, "Great Lakes",
+             ifelse(df_age_loc_long$LocationDesc %in% plains, "Plains",
+             ifelse(df_age_loc_long$LocationDesc %in% southwest, "Southwest",
+             ifelse(df_age_loc_long$LocationDesc %in% rocky_mountains, "Rocky Mountains",
+             ifelse(df_age_loc_long$LocationDesc %in% far_west, "Far West",
+             ifelse(df_age_loc_long$LocationDesc %in% territories, "US Territories", NA)))))))))
+
+na_rows <- df_age_loc_long[is.na(df_age_loc_long$region), ]
+
+df_age_loc_long_new <- df_age_loc_long[!is.na(df_age_loc_long$region), ]
+
+ggplot(df_age_loc_long_new, aes(x=YearStart, y=value_age, group=Age)) + 
+  #geom_jitter(aes(color=Age), alpha=0.5) +
+  geom_line(aes(color=Age), size=1, stat = "summary", fun = "mean") +
+    labs(title="Obesity Prevalence by Age", 
+         y="Percent of Adults with Obesity",
+         caption="Source: BRFSS") + 
+  facet_wrap(~region) +
+  theme(axis.text.x = element_text(angle = -60, hjust=-0.25))
+```
+
+Regional differences considering Gender & obesity rates:
+
+```{r, warning=FALSE, echo=FALSE}
+# Garrett
+
+df_gender_loc_long$region <- ifelse(df_gender_loc_long$LocationDesc %in% new_england, "New England",
+             ifelse(df_gender_loc_long$LocationDesc %in% mideast, "Mideast",
+             ifelse(df_gender_loc_long$LocationDesc %in% southeast, "Southeast",
+             ifelse(df_gender_loc_long$LocationDesc %in% great_lakes, "Great Lakes",
+             ifelse(df_gender_loc_long$LocationDesc %in% plains, "Plains",
+             ifelse(df_gender_loc_long$LocationDesc %in% southwest, "Southwest",
+             ifelse(df_gender_loc_long$LocationDesc %in% rocky_mountains, "Rocky Mountains",
+             ifelse(df_gender_loc_long$LocationDesc %in% far_west, "Far West",
+             ifelse(df_gender_loc_long$LocationDesc %in% territories, "US Territories", NA)))))))))
+
+
+# Filter rows where 'region' is NA
+na_rows <- df_gender_loc_long[is.na(df_gender_loc_long$region), ]
+
+df_gender_loc_long_new <- df_gender_loc_long[!is.na(df_gender_loc_long$region), ]
+
+ggplot(df_gender_loc_long_new, aes(x=YearStart, y=value_gender, group=Gender)) + 
+  geom_jitter(aes(color=Gender), alpha=0.5) +
+  geom_line(aes(color=Gender), stat="summary", fun = "mean", size=2) + 
+  labs(title="Obesity Prevalence by Gender", 
+       y="Percent of Adults with Obesity",
+       caption="Source: BRFSS") + 
+  facet_wrap(~region) +
+  theme(axis.text.x = element_text(angle = -60, hjust=-0.25))
+```
